@@ -1,7 +1,8 @@
 //! Process management syscalls
 use crate::{
-    task::{exit_current_and_run_next, suspend_current_and_run_next},
-    timer::get_time_us,
+    config::MAX_SYSCALL_NUM,
+    task::{exit_current_and_run_next, suspend_current_and_run_next, TaskStatus, TASK_MANAGER},
+    timer::{get_time_ms, get_time_us},
 };
 
 #[repr(C)]
@@ -9,6 +10,17 @@ use crate::{
 pub struct TimeVal {
     pub sec: usize,
     pub usec: usize,
+}
+
+/// Task information
+#[allow(dead_code)]
+pub struct TaskInfo {
+    /// Task status in it's life cycle
+    status: TaskStatus,
+    /// The numbers of syscall called by task
+    syscall_times: [u32; MAX_SYSCALL_NUM],
+    /// Total running time of task
+    time: usize,
 }
 
 /// task exits and submit an exit code
@@ -38,8 +50,18 @@ pub fn sys_get_time(ts: *mut TimeVal, _tz: usize) -> isize {
     0
 }
 
-// TODO: implement the syscall
-pub fn sys_trace(_trace_request: usize, _id: usize, _data: usize) -> isize {
-    trace!("kernel: sys_trace");
-    -1
+/// YOUR JOB: Finish sys_task_info to pass testcases
+pub fn sys_task_info(ti: *mut TaskInfo) -> isize {
+    trace!("kernel: sys_task_info");
+    let task = TASK_MANAGER.current_task();
+    let now = get_time_ms();
+
+    let info = task.info();
+
+    unsafe {
+        (*ti).status = task.status();
+        (*ti).time = now - info.start_time;
+        (*ti).syscall_times.copy_from_slice(&info.syscall_times);
+    }
+    0
 }

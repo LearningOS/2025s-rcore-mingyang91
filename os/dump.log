@@ -1,0 +1,264 @@
+(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add riscv64gc-unknown-none-elf
+riscv64gc-unknown-none-elf (installed)
+cargo install cargo-binutils
+rustup component add rust-src
+rustup component add llvm-tools-preview
+target/riscv64gc-unknown-none-elf/release/ch2b_bad_address target/riscv64gc-unknown-none-elf/release/ch2b_bad_instructions target/riscv64gc-unknown-none-elf/release/ch2b_bad_register target/riscv64gc-unknown-none-elf/release/ch2b_hello_world target/riscv64gc-unknown-none-elf/release/ch2b_power_3 target/riscv64gc-unknown-none-elf/release/ch2b_power_5 target/riscv64gc-unknown-none-elf/release/ch2b_power_7 target/riscv64gc-unknown-none-elf/release/ch3b_yield0 target/riscv64gc-unknown-none-elf/release/ch3b_yield1 target/riscv64gc-unknown-none-elf/release/ch3b_yield2
+[build.py] application ch2b_bad_address start with address 0x80400000
+[build.py] application ch2b_bad_instructions start with address 0x80420000
+[build.py] application ch2b_bad_register start with address 0x80440000
+[build.py] application ch2b_hello_world start with address 0x80460000
+[build.py] application ch2b_power_3 start with address 0x80480000
+[build.py] application ch2b_power_5 start with address 0x804a0000
+[build.py] application ch2b_power_7 start with address 0x804c0000
+[build.py] application ch3b_yield0 start with address 0x804e0000
+[build.py] application ch3b_yield1 start with address 0x80500000
+[build.py] application ch3b_yield2 start with address 0x80520000
+Platform: qemu9
+[rustsbi] RustSBI version 0.4.0-alpha.1, adapting to RISC-V SBI v2.0.0
+.______       __    __      _______.___________.  _______..______   __
+|   _  \     |  |  |  |    /       |           | /       ||   _  \ |  |
+|  |_)  |    |  |  |  |   |   (----`---|  |----`|   (----`|  |_)  ||  |
+|      /     |  |  |  |    \   \       |  |      \   \    |   _  < |  |
+|  |\  \----.|  `--'  |.----)   |      |  |  .----)   |   |  |_)  ||  |
+| _| `._____| \______/ |_______/       |__|  |_______/    |______/ |__|
+[rustsbi] Implementation     : RustSBI-QEMU Version 0.2.0-alpha.3
+[rustsbi] Platform Name      : riscv-virtio,qemu
+[rustsbi] Platform SMP       : 1
+[rustsbi] Platform Memory    : 0x80000000..0x88000000
+[rustsbi] Boot HART          : 0
+[rustsbi] Device Tree Region : 0x87e00000..0x87e012b4
+[rustsbi] Firmware Address   : 0x80000000
+[rustsbi] Supervisor Address : 0x80200000
+[rustsbi] pmp01: 0x00000000..0x80000000 (-wr)
+[rustsbi] pmp02: 0x80000000..0x80200000 (---)
+[rustsbi] pmp03: 0x80200000..0x88000000 (xwr)
+[rustsbi] pmp04: 0x88000000..0x00000000 (-wr)
+[kernel] Hello, world!
+[90m[TRACE] [kernel] .text [0x80200000, 0x80205000)[0m
+[32m[DEBUG] [kernel] .rodata [0x80205000, 0x80238000)[0m
+[34m[ INFO] [kernel] .data [0x80238000, 0x80261000)[0m
+[93m[ WARN] [kernel] boot_stack top=bottom=0x80271000, lower_bound=0x80261000[0m
+[31m[ERROR] [kernel] .bss [0x80271000, 0x8029a000)[0m
+[kernel] PageFault in application, bad addr = 0x0, bad instruction = 0x804003a4, kernel killed it.
+[90m[TRACE] Task 0 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[kernel] IllegalInstruction in application, kernel killed it.
+[90m[TRACE] Task 1 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[kernel] IllegalInstruction in application, kernel killed it.
+[90m[TRACE] Task 2 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+Hello, world from user mode program!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 3 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+power_3 [10000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [20000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [30000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [40000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [50000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [60000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [70000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [80000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [90000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [100000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [110000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [120000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [130000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [140000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [150000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [160000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [170000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [180000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [190000/200000]
+[90m[TRACE] kernel: sys_write[0m
+power_3 [200000/200000]
+[90m[TRACE] kernel: sys_write[0m
+3^200000 = 871008973(MOD 998244353)
+[90m[TRACE] kernel: sys_write[0m
+Test power_3 OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 4 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+power_5 [10000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [20000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [30000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [40000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [50000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [60000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [70000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [80000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [90000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [100000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [110000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [120000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [130000/140000]
+[90m[TRACE] kernel: sys_write[0m
+power_5 [140000/140000]
+[90m[TRACE] kernel: sys_write[0m
+5^140000 = 386471875(MOD 998244353)
+[90m[TRACE] kernel: sys_write[0m
+Test power_5 OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 5 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+power_7 [10000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [20000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [30000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [40000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [50000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [60000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [70000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [80000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [90000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [100000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [110000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [120000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [130000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [140000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [150000/160000]
+[90m[TRACE] kernel: sys_write[0m
+power_7 [160000/160000]
+[90m[TRACE] kernel: sys_write[0m
+7^160000 = 667897727(MOD 998244353)
+[90m[TRACE] kernel: sys_write[0m
+Test power_7 OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 6 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+AAAAAAAAAA [1/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 7 is not running: Ready[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+BBBBBBBBBB [1/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 8 is not running: Ready[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+CCCCCCCCCC [1/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 9 is not running: Ready[0m
+[90m[TRACE] Task 9 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+AAAAAAAAAA [2/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 7 is not running: Ready[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+BBBBBBBBBB [2/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 8 is not running: Ready[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+CCCCCCCCCC [2/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 9 is not running: Ready[0m
+[90m[TRACE] Task 9 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+AAAAAAAAAA [3/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 7 is not running: Ready[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+BBBBBBBBBB [3/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 8 is not running: Ready[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+CCCCCCCCCC [3/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 9 is not running: Ready[0m
+[90m[TRACE] Task 9 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+AAAAAAAAAA [4/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 7 is not running: Ready[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+BBBBBBBBBB [4/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 8 is not running: Ready[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+CCCCCCCCCC [4/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 9 is not running: Ready[0m
+[90m[TRACE] Task 9 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+AAAAAAAAAA [5/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 7 is not running: Ready[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+BBBBBBBBBB [5/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 8 is not running: Ready[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+CCCCCCCCCC [5/5]
+[90m[TRACE] kernel: sys_yield[0m
+[90m[TRACE] Task 9 is not running: Ready[0m
+[90m[TRACE] Task 9 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+Test write A OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 7 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+Test write B OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[90m[TRACE] Task 8 is not running: TaskControlBlock::turn_to_ready: not a Running task[0m
+[90m[TRACE] kernel: sys_write[0m
+Test write C OK!
+[90m[TRACE] kernel: sys_write[0m
+[90m[TRACE] [kernel] Application exited with code 0[0m
+[kernel] Panicked at src/task/mod.rs:128 All applications completed!
