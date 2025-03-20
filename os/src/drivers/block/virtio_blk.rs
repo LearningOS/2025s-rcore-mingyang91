@@ -1,3 +1,5 @@
+// use core::sync::atomic::{fence, Ordering};
+
 use super::BlockDevice;
 use crate::mm::{
     frame_alloc, frame_dealloc, kernel_token, FrameTracker, PageTable, PhysAddr, PhysPageNum,
@@ -24,8 +26,10 @@ impl BlockDevice for VirtIOBlock {
             .exclusive_access()
             .read_block(block_id, buf)
             .expect("Error when reading VirtIOBlk");
+        // fence(Ordering::Acquire);
     }
     fn write_block(&self, block_id: usize, buf: &[u8]) {
+        // fence(Ordering::Release);
         self.0
             .exclusive_access()
             .write_block(block_id, buf)
@@ -77,9 +81,10 @@ impl Hal for VirtioHal {
     }
 
     fn virt_to_phys(vaddr: usize) -> usize {
-        PageTable::from_token(kernel_token())
+        let ret = PageTable::from_token(kernel_token())
             .translate_va(VirtAddr::from(vaddr))
             .unwrap()
-            .0
+            .0;
+        ret
     }
 }

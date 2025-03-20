@@ -318,6 +318,49 @@ impl MemorySet {
             false
         }
     }
+
+    /// Map a new memory area for current task.
+    pub fn mmap(&mut self, start_va: VirtAddr, end_va: VirtAddr, permission: MapPermission) -> Result<(), &str> {
+
+        let mut next_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+
+        while next_vpn < end_vpn {
+            if let Some(pte) = self.translate(next_vpn) {
+                if pte.is_valid() {
+                    debug!("mmap: area already mapped: {:x?}", pte.ppn());
+                    return Err("mmap: area already mapped");
+                }
+            }
+            next_vpn.0 += 1;
+        }
+        self.insert_framed_area(start_va, end_va, permission | MapPermission::U);
+        Ok(())
+    }
+
+    /// Unmap a memory area for current task.
+    pub fn unmap(&mut self, start_va: VirtAddr, end_va: VirtAddr) -> Result<(), &str> {
+        let mut next_vpn = start_va.floor();
+        let end_vpn = end_va.ceil();
+
+        let mut collect = Vec::new();
+        while next_vpn < end_vpn {
+            if let Some(pte) = self.translate(next_vpn) {
+                if !pte.is_valid() {
+                    debug!("unmap: area not mapped: {:x?}", next_vpn);
+                    return Err("unmap: area not mapped");
+                }
+            }
+            collect.push(next_vpn);
+            next_vpn.0 += 1;
+        }
+
+        for vpn in collect {
+            self.remove_area_with_start_vpn(vpn);
+        }
+        Ok(())
+    }
+
 }
 /// map area structure, controls a contiguous piece of virtual memory
 pub struct MapArea {

@@ -4,7 +4,7 @@
 //!
 //! `UPSafeCell<OSInodeInner>` -> `OSInode`: for static `ROOT_INODE`,we
 //! need to wrap `OSInodeInner` into `UPSafeCell`
-use super::File;
+use super::{File, Stat, StatMode};
 use crate::drivers::BLOCK_DEVICE;
 use crate::mm::UserBuffer;
 use crate::sync::UPSafeCell;
@@ -17,6 +17,7 @@ use lazy_static::*;
 /// inode in memory
 /// A wrapper around a filesystem inode
 /// to implement File trait atop
+#[derive(Debug)]
 pub struct OSInode {
     readable: bool,
     writable: bool,
@@ -26,6 +27,16 @@ pub struct OSInode {
 pub struct OSInodeInner {
     offset: usize,
     inode: Arc<Inode>,
+}
+
+impl core::fmt::Debug for OSInodeInner {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("OSInodeInner")
+            .field("offset", &self.offset)
+            .field("inode.block_id", &self.inode.block_id)
+            .field("inode.block_offset", &self.inode.block_offset)
+            .finish()
+    }
 }
 
 impl OSInode {
@@ -39,9 +50,34 @@ impl OSInode {
     }
     /// read all data from the inode
     pub fn read_all(&self) -> Vec<u8> {
+        self.read_all_good()
+    }
+
+    #[allow(unused)]
+    fn read_all_good(&self) -> Vec<u8> {
+        #[repr(C, align(4096))]
+        struct Buffer([u8; 512]);
+
         let mut inner = self.inner.exclusive_access();
-        let mut buffer: Vec<u8> = Vec::with_capacity(512);
-        buffer.resize(512, 0);
+        let mut heap_buffer = alloc::boxed::Box::new(Buffer([0u8; 512]));
+        let mut v: Vec<u8> = Vec::new();
+        loop {
+            let len = inner
+                .inode
+                .read_at(inner.offset, heap_buffer.as_mut().0.as_mut_slice());
+            if len == 0 {
+                break;
+            }
+            inner.offset += len;
+            v.extend_from_slice(&heap_buffer.as_ref().0[..len]);
+        }
+        v
+    }
+
+    #[allow(unused)]
+    fn read_all_bad(&self) -> Vec<u8> {
+        let mut inner = self.inner.exclusive_access();
+        let mut buffer = [0u8; 512];
         let mut v: Vec<u8> = Vec::new();
         loop {
             let len = inner.inode.read_at(inner.offset, &mut buffer);
@@ -125,6 +161,16 @@ pub fn open_file(name: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
     }
 }
 
+/// Link a file
+pub fn link_file(old_name: &str, new_name: &str) -> bool {
+    ROOT_INODE.link_file(old_name, new_name)
+}
+
+/// Unlink a file
+pub fn unlink_file(name: &str) -> bool {
+    ROOT_INODE.unlink(name)
+}
+
 impl File for OSInode {
     fn readable(&self) -> bool {
         self.readable
@@ -155,5 +201,23 @@ impl File for OSInode {
             total_write_size += write_size;
         }
         total_write_size
+    }
+
+    fn stat(&self) -> Stat {
+        let inner = self.inner.exclusive_access();
+        inner.inode.read_disk_inode(|disk_inode| {
+            let mode = if disk_inode.is_dir() {
+                StatMode::DIR
+            } else {
+                StatMode::FILE
+            };
+            Stat {
+                dev: 0,
+                ino: 0,
+                mode: mode,
+                nlink: disk_inode.nlink,
+                pad: Default::default(),
+            }
+        })
     }
 }

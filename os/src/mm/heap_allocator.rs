@@ -23,7 +23,7 @@ pub fn init_heap() {
 }
 
 #[allow(unused)]
-pub fn heap_test() {
+fn heap_test() {
     use alloc::boxed::Box;
     use alloc::vec::Vec;
     extern "C" {
