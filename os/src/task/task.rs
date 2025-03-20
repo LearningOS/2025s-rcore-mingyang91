@@ -1,9 +1,12 @@
 //! Types related to task management & Functions for completely changing TCB
 use super::TaskContext;
 use super::{kstack_alloc, pid_alloc, KernelStack, PidHandle};
-use crate::config::TRAP_CONTEXT_BASE;
 use crate::mm::{MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::sync::UPSafeCell;
+
+use crate::config::{TRAP_CONTEXT_BASE, MAX_SYSCALL_NUM};
+
+use crate::timer::get_time_ms;
 use crate::trap::{trap_handler, TrapContext};
 use alloc::sync::{Arc, Weak};
 use alloc::vec::Vec;
@@ -50,6 +53,12 @@ pub struct TaskControlBlockInner {
     /// Maintain the execution status of the current process
     pub task_status: TaskStatus,
 
+    /// The start time of the task
+    pub start_time: usize,
+
+    /// The number of syscalls that the task has called
+    pub syscall_times: [u32; MAX_SYSCALL_NUM],
+
     /// Application address space
     pub memory_set: MemorySet,
 
@@ -68,6 +77,12 @@ pub struct TaskControlBlockInner {
 
     /// Program break
     pub program_brk: usize,
+
+    /// Priority of the process
+    pub priority: usize,
+
+    /// Stride counter
+    pub counter: usize,
 }
 
 impl TaskControlBlockInner {
@@ -112,12 +127,16 @@ impl TaskControlBlock {
                     base_size: user_sp,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                     task_status: TaskStatus::Ready,
+                    start_time: get_time_ms(),
+                    syscall_times: [0; MAX_SYSCALL_NUM],
                     memory_set,
                     parent: None,
                     children: Vec::new(),
                     exit_code: 0,
                     heap_bottom: user_sp,
                     program_brk: user_sp,
+                    priority: 1,
+                    counter: 0,
                 })
             },
         };
@@ -185,12 +204,16 @@ impl TaskControlBlock {
                     base_size: parent_inner.base_size,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                     task_status: TaskStatus::Ready,
+                    start_time: get_time_ms(),
+                    syscall_times: [0; MAX_SYSCALL_NUM],
                     memory_set,
                     parent: Some(Arc::downgrade(self)),
                     children: Vec::new(),
                     exit_code: 0,
                     heap_bottom: parent_inner.heap_bottom,
                     program_brk: parent_inner.program_brk,
+                    priority: 1,
+                    counter: 0,
                 })
             },
         });
@@ -236,16 +259,27 @@ impl TaskControlBlock {
             None
         }
     }
+
+    /// Get the status of the task
+    pub fn status(&self) -> TaskStatus {
+        self.inner.exclusive_access().get_status()
+    }
+
+    /// Increase the syscall times
+    pub fn sys_call_inc(&self, syscall_id: usize) {
+        self.inner.exclusive_access().syscall_times[syscall_id] += 1;
+    }
 }
 
-#[derive(Copy, Clone, PartialEq)]
+
 /// task status: UnInit, Ready, Running, Exited
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TaskStatus {
-    /// uninitialized
+    /// The task is uninitialized
     UnInit,
-    /// ready to run
+    /// The task is ready to run
     Ready,
-    /// running
+    /// The task is running
     Running,
     /// exited
     Zombie,

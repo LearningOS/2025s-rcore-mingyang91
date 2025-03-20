@@ -13,6 +13,8 @@ pub const KERNEL_HEAP_SIZE: usize = 0x200_0000;
 pub const PAGE_SIZE: usize = 0x1000;
 /// page size bits: 12
 pub const PAGE_SIZE_BITS: usize = 0xc;
+/// the max number of syscall
+pub const MAX_SYSCALL_NUM: usize = 500;
 /// the virtual addr of trapoline
 pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;
 /// the virtual addr of trap context
