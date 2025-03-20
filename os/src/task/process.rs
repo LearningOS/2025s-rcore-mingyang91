@@ -7,13 +7,14 @@ use super::{add_task, SignalFlags};
 use super::{pid_alloc, PidHandle};
 use crate::fs::{File, Stdin, Stdout};
 use crate::mm::{translated_refmut, MemorySet, KERNEL_SPACE};
-use crate::sync::{Condvar, Mutex, Semaphore, UPSafeCell};
+use crate::sync::{Banker, Condvar, Mutex, Semaphore, UPSafeCell};
 use crate::trap::{trap_handler, TrapContext};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefMut;
+use core::fmt::{self, Display, Formatter};
 
 /// Process Control Block
 pub struct ProcessControlBlock {
@@ -21,6 +22,23 @@ pub struct ProcessControlBlock {
     pub pid: PidHandle,
     /// mutable
     inner: UPSafeCell<ProcessControlBlockInner>,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum Resource {
+    Mutex(usize),
+    Semaphore(usize),
+    Condvar(usize),
+}
+
+impl Display for Resource {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Resource::Mutex(id) => write!(f, "Mutex({})", id),
+            Resource::Semaphore(id) => write!(f, "Semaphore({})", id),
+            Resource::Condvar(id) => write!(f, "Condvar({})", id),
+        }
+    }
 }
 
 /// Inner of Process Control Block
@@ -49,6 +67,8 @@ pub struct ProcessControlBlockInner {
     pub semaphore_list: Vec<Option<Arc<Semaphore>>>,
     /// condvar list
     pub condvar_list: Vec<Option<Arc<Condvar>>>,
+    /// deadlock detection
+    pub banker: Option<Banker<Resource>>,
 }
 
 impl ProcessControlBlockInner {
@@ -81,6 +101,86 @@ impl ProcessControlBlockInner {
     /// get a task with tid in this process
     pub fn get_task(&self, tid: usize) -> Arc<TaskControlBlock> {
         self.tasks[tid].as_ref().unwrap().clone()
+    }
+
+    pub fn new_thread(&mut self, thread_id: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.update_task(thread_id);
+    }
+
+    pub fn new_mutex(&mut self, mutex_id: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.add_resource(Resource::Mutex(mutex_id), 1);
+    }
+
+    pub fn new_semaphore(&mut self, semaphore_id: usize, total: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.add_resource(Resource::Semaphore(semaphore_id), total);
+    }
+
+    pub fn new_condvar(&mut self, condvar_id: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.add_resource(Resource::Condvar(condvar_id), 1);
+    }
+
+    pub fn try_lock_mutex(&mut self, thread_id: usize, mutex_id: usize) -> bool {
+        let Some(banker) = self.banker.as_mut() else {
+            return true
+        };
+
+        banker.try_request(thread_id, Resource::Mutex(mutex_id), 1)
+    }
+
+    pub fn lock_mutex(&mut self, thread_id: usize, mutex_id: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.request(thread_id, Resource::Mutex(mutex_id), 1)
+    }
+
+    pub fn unlock_mutex(&mut self, thread_id: usize, mutex_id: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.release_holding(thread_id, Resource::Mutex(mutex_id), 1);
+    }
+
+    pub fn try_request_semaphore(&mut self, thread_id: usize, semaphore_id: usize, amount: usize) -> bool {
+        let Some(banker) = self.banker.as_mut() else {
+            return true
+        };
+
+        banker.try_request(thread_id, Resource::Semaphore(semaphore_id), amount)
+    }
+
+    pub fn request_semaphore(&mut self, thread_id: usize, semaphore_id: usize, amount: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.request(thread_id, Resource::Semaphore(semaphore_id), amount)
+    }
+
+    pub fn release_semaphore(&mut self, semaphore_id: usize, amount: usize) {
+        let Some(banker) = self.banker.as_mut() else {
+            return
+        };
+
+        banker.release_new(Resource::Semaphore(semaphore_id), amount)
     }
 }
 
@@ -119,6 +219,7 @@ impl ProcessControlBlock {
                     mutex_list: Vec::new(),
                     semaphore_list: Vec::new(),
                     condvar_list: Vec::new(),
+                    banker: None,
                 })
             },
         });
@@ -245,6 +346,7 @@ impl ProcessControlBlock {
                     mutex_list: Vec::new(),
                     semaphore_list: Vec::new(),
                     condvar_list: Vec::new(),
+                    banker: None
                 })
             },
         });
@@ -281,5 +383,20 @@ impl ProcessControlBlock {
     /// get pid
     pub fn getpid(&self) -> usize {
         self.pid.0
+    }
+
+    pub fn turn_deadlock_detect(&self, enable: bool) -> bool {
+        let mut inner = self.inner_exclusive_access();
+        if enable {
+            if inner.banker.is_none() {
+                inner.banker = Some(Banker::new());
+                true
+            } else {
+                false
+            }
+        } else {
+            inner.banker = None;
+            true
+        }
     }
 }

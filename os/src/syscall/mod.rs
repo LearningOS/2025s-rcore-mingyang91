@@ -74,6 +74,8 @@ pub const SYSCALL_MAIL_WRITE: usize = 402;
 pub const SYSCALL_DUP: usize = 24;
 /// pipe syscall
 pub const SYSCALL_PIPE: usize = 59;
+/// task info syscall
+pub const SYSCALL_TASK_INFO: usize = 410;
 /// thread_create syscall
 pub const SYSCALL_THREAD_CREATE: usize = 460;
 /// waittid syscall
@@ -135,6 +137,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 4]) -> isize {
         SYSCALL_MMAP => sys_mmap(args[0], args[1], args[2]),
         SYSCALL_MUNMAP => sys_munmap(args[0], args[1]),
         SYSCALL_SET_PRIORITY => sys_set_priority(args[0] as isize),
+        SYSCALL_TASK_INFO => sys_task_info(args[0] as *mut TaskInfo),
         SYSCALL_SPAWN => sys_spawn(args[0] as *const u8),
         SYSCALL_THREAD_CREATE => sys_thread_create(args[0], args[1]),
         SYSCALL_WAITTID => sys_waittid(args[0]) as isize,
