@@ -62,6 +62,22 @@ impl PageTableEntry {
     pub fn executable(&self) -> bool {
         (self.flags() & PTEFlags::X) != PTEFlags::empty()
     }
+    /// The page pointered by page table entry is user accessible?
+    pub fn user(&self) -> bool {
+        (self.flags() & PTEFlags::U) != PTEFlags::empty()
+    }
+    /// The page pointered by page table entry is global?
+    pub fn global(&self) -> bool {
+        (self.flags() & PTEFlags::G) != PTEFlags::empty()
+    }
+    /// The page pointered by page table entry is accessed?
+    pub fn accessed(&self) -> bool {
+        (self.flags() & PTEFlags::A) != PTEFlags::empty()
+    }
+    /// The page pointered by page table entry is dirty?
+    pub fn dirty(&self) -> bool {
+        (self.flags() & PTEFlags::D) != PTEFlags::empty()
+    }
 }
 
 /// page table structure

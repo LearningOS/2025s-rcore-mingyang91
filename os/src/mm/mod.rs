@@ -29,25 +29,39 @@ pub fn init() {
 
 /// Translate&Copy a ptr[u8] array with LENGTH len to a mutable u8 Vec through page table
 pub fn trace_read<T>(token: usize, src: usize) -> Option<T> {
+    debug!("trace_read: src {:x?}", src);
     let pt = PageTable::from_token(token);
-    let Some(pte) = pt.translate(src.into()) else {
+    let start_va = VirtAddr::from(src);
+    let vpn = start_va.floor();
+    let Some(pte) = pt.translate(vpn) else {
+        debug!("trace_read: failed to translate src {:x?}", src);
         return None;
     };
 
     if !pte.is_valid() {
+        debug!("trace_read: pte is not valid");
+        return None;
+    }
+
+    if !pte.user() {
+        debug!("trace_read: pte is not user");
         return None;
     }
 
     if !pte.readable() {
+        debug!("trace_read: pte is not readable");
         return None;
     }
 
+    debug!("trace_read: pte {:?}", pte.bits);
     let mut dst = core::mem::MaybeUninit::<T>::uninit();
     let dst_ptr = dst.as_mut_ptr();
     let dst_buf_ptr: *mut u8 = unsafe { core::mem::transmute(dst_ptr) };
     let len = core::mem::size_of::<T>();
+    debug!("trace_read: len {:?}", len);
 
     let src_frames = translated_byte_buffer(token, src as *const u8, len);
+    debug!("trace_read: src_frames {:?}", src_frames);
 
     let mut offset = 0;
     for src_frame in src_frames {
@@ -61,12 +75,20 @@ pub fn trace_read<T>(token: usize, src: usize) -> Option<T> {
 
 /// Write data to the virtual address `dst` in the user space
 pub fn trace_write<T>(token: usize, data: T, dst: usize) -> bool {
+    debug!("trace_write: dst {:x?}", dst);
     let pt = PageTable::from_token(token);
-    let Some(pte) = pt.translate(dst.into()) else {
+    let start_va = VirtAddr::from(dst);
+    let vpn = start_va.floor();
+
+    let Some(pte) = pt.translate(vpn) else {
         return false;
     };
 
     if !pte.is_valid() {
+        return false;
+    }
+
+    if !pte.user() {
         return false;
     }
 
