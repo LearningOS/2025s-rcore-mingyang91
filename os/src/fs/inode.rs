@@ -33,8 +33,8 @@ impl core::fmt::Debug for OSInodeInner {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("OSInodeInner")
             .field("offset", &self.offset)
-            .field("inode.block_id", &self.inode.block_id)
-            .field("inode.block_offset", &self.inode.block_offset)
+            // .field("inode.block_id", &self.inode.block_id)
+            // .field("inode.block_offset", &self.inode.block_offset)
             .finish()
     }
 }
