@@ -4,7 +4,7 @@ MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 
 # BOARD
-BOARD ?= qemu
+BOARD ?= qemu9
 SBI ?= rustsbi
 BOOTLOADER := ../bootloader/$(SBI)-$(BOARD).bin
 
