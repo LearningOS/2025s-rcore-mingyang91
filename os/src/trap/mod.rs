@@ -17,10 +17,10 @@ mod context;
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT_BASE};
 use crate::syscall::syscall;
 use crate::task::{
-    current_trap_cx, current_user_token, exit_current_and_run_next, suspend_current_and_run_next,
-};
+    current_trap_cx, current_user_token, exit_current_and_run_next, suspend_current_and_run_next, TaskControlBlock, TASK_MANAGER};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
+use core::borrow::BorrowMut;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -63,10 +63,16 @@ pub fn trap_handler() -> ! {
     // trace!("into {:?}", scause.cause());
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
+            let syscall_id = cx.x[17];
+            {
+                let mut current = TASK_MANAGER.current_task();
+                let current: &mut TaskControlBlock = current.borrow_mut();
+                current.sys_call_inc(syscall_id);
+            }
             // jump to next instruction anyway
             cx.sepc += 4;
             // get system call return value
-            cx.x[10] = syscall(cx.x[17], [cx.x[10], cx.x[11], cx.x[12]]) as usize;
+            cx.x[10] = syscall(syscall_id, [cx.x[10], cx.x[11], cx.x[12]]) as usize;
         }
         Trap::Exception(Exception::StoreFault)
         | Trap::Exception(Exception::StorePageFault)

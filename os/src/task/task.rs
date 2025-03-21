@@ -1,6 +1,11 @@
 //! Types related to task management
+
 use super::TaskContext;
-use crate::config::TRAP_CONTEXT_BASE;
+use crate::{
+    config::{MAX_SYSCALL_NUM, TRAP_CONTEXT_BASE},
+    timer::get_time_ms,
+};
+
 use crate::mm::{
     kernel_stack_position, MapPermission, MemorySet, PhysPageNum, VirtAddr, KERNEL_SPACE,
 };
@@ -13,6 +18,12 @@ pub struct TaskControlBlock {
 
     /// Maintain the execution status of the current process
     pub task_status: TaskStatus,
+
+    /// The start time of the task
+    pub start_time: usize,
+
+    /// The number of syscalls that the task has called
+    pub syscall_times: [u32; MAX_SYSCALL_NUM],
 
     /// Application address space
     pub memory_set: MemorySet,
@@ -58,6 +69,8 @@ impl TaskControlBlock {
         let task_control_block = Self {
             task_status,
             task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+            start_time: 0,
+            syscall_times: [0; MAX_SYSCALL_NUM],
             memory_set,
             trap_cx_ppn,
             base_size: user_sp,
@@ -96,17 +109,66 @@ impl TaskControlBlock {
             None
         }
     }
+
+    /// Turn the task into `TaskControlBlock::Running`
+    pub fn try_turn_to_running(&mut self) -> Result<(), &'static str> {
+        if self.task_status != TaskStatus::Ready {
+            return Err("TaskControlBlock::turn_to_running: not a Ready task");
+        }
+
+        self.task_status = TaskStatus::Running;
+        if self.start_time == 0 {
+            self.start_time = get_time_ms();
+        }
+        Ok(())
+    }
+
+    /// Turn the task into `TaskControlBlock::Ready`
+    pub fn try_turn_to_ready(&mut self) -> Result<(), &'static str> {
+        if self.task_status != TaskStatus::Running {
+            trace!("{:?}", self.task_status);
+            return Err("TaskControlBlock::turn_to_ready: not a Running task");
+        }
+
+        self.task_status = TaskStatus::Ready;
+        Ok(())
+    }
+
+    /// Turn the task into `TaskControlBlock::Exited`
+    pub fn turn_to_exited(&mut self) {
+        self.task_status = TaskStatus::Exited;
+    }
+
+    /// Get the task context
+    pub fn cx(&self) -> &TaskContext {
+        &self.task_cx
+    }
+
+    /// Check if the task is ready
+    pub fn is_ready(&self) -> bool {
+        self.task_status == TaskStatus::Ready
+    }
+
+    /// Get the status of the task
+    pub fn status(&self) -> TaskStatus {
+        self.task_status
+    }
+
+    /// Increase the syscall times
+    pub fn sys_call_inc(&mut self, syscall_id: usize) {
+        self.syscall_times[syscall_id] += 1;
+    }
 }
 
-#[derive(Copy, Clone, PartialEq)]
 /// task status: UnInit, Ready, Running, Exited
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum TaskStatus {
-    /// uninitialized
+    /// The task is uninitialized
     UnInit,
-    /// ready to run
+    /// The task is ready to run
     Ready,
-    /// running
+    /// The task is running
     Running,
-    /// exited
+    /// The task has exited
     Exited,
 }
