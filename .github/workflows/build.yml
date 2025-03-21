@@ -33,7 +33,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run tests
-        continue-on-error: true
         run: |
           qemu-system-riscv64 --version
           rustup target add riscv64gc-unknown-none-elf
@@ -94,9 +93,18 @@ jobs:
             --argjson totalScore 500 \
             '{channel: $channel, courseId: $courseId, name: $name, score: $score, totalScore: $totalScore}')
 
-          curl -X POST $post_api \
+            response=$(curl -X POST $post_api \
             -H "accept: application/json;charset=utf-8" \
             -H "Content-Type: application/json" \
             -H "token: $token" \
             -d "$score_json" \
-            -v
+            -v)
+
+            echo "Response: $response"
+
+            if echo "$response" | grep -q '"result":1'; then
+            echo "Success: The result field contains 1."
+            else
+            echo "Error: The result field does not contain 1."
+            exit 1
+            fi
